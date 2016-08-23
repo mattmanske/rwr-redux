@@ -1,3 +1,6 @@
+## 0.5.0
+* add passing props from view to Redux Container
+
 ## 0.2.0
 * add server side rendering
 * add redux-router helpers:
