@@ -4,14 +4,28 @@ require 'react_webpack_rails/redux_integration/services/redux_router'
 module ReactWebpackRails
   module ReduxIntegration
     module ViewHelpers
+      def rwr_element(integration_name, payload = {}, html_options = {}, &block)
+        data = {
+          integration_name: integration_name,
+          payload: payload,
+          rwr_element: true
+        }
+        html_options = html_options.merge(data: data)
+        html_tag = html_options.delete(:tag) || :div
+        content_tag(html_tag, '', html_options, &block)
+      end
+
       def redux_store(name, raw_props = {}, options = {})
         props = serialize_props(raw_props)
 
         if server_side(options.delete(:server_side))
-          NodeIntegrationRunner.new('redux-store', name: name, props: props).run
+          result = NodeIntegrationRunner.new('redux-store', name: name, props: props).run
+          rwr_element('redux-store', { name: name, props: props }, options) do
+            result.html_safe
+          end
+        else
+          rwr_element('redux-store', { name: name, props: props }, options)
         end
-
-        rwr_element('redux-store', { name: name, props: props }, options)
       end
 
       def redux_container(name, options = {})
@@ -31,7 +45,11 @@ module ReactWebpackRails
         end
       end
 
-      private
+    private
+
+      def server_side(server_side)
+        server_side.nil? ? Rails.application.config.react.server_side : server_side
+      end
 
       def serialize_props(raw_props)
         props = raw_props.as_json
